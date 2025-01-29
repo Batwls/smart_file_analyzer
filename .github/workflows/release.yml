@@ -22,6 +22,9 @@ jobs:
       - name: 🦀 Install Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: ⚙️ Install macOS Target
+        run: rustup target add x86_64-apple-darwin  # ✅ Fix: Ensures macOS target is installed
+
       - name: 🏗️ Build Rust Binary for macOS
         run: cargo build --release --target x86_64-apple-darwin
 
