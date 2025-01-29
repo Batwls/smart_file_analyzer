@@ -1,4 +1,4 @@
-name: MacOS Release
+name: MacOS & Linux Release
 
 on:
   push:
@@ -10,7 +10,13 @@ permissions:
 
 jobs:
   build:
-    runs-on: macos-latest  # ✅ Build only for macOS
+    strategy:
+      matrix:
+        target:
+          - x86_64-apple-darwin       # ✅ macOS
+          - x86_64-unknown-linux-gnu  # ✅ Linux
+
+    runs-on: ${{ matrix.target == 'x86_64-apple-darwin' && 'macos-latest' || 'ubuntu-latest' }}
 
     env:
       BINARY_NAME: smart_file_analyzer  # Your project's binary name
@@ -22,17 +28,22 @@ jobs:
       - name: 🦀 Install Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: ⚙️ Install macOS Target
-        run: rustup target add x86_64-apple-darwin  # ✅ Fix: Ensures macOS target is installed
+      - name: ⚙️ Install Required Rust Targets
+        run: rustup target add ${{ matrix.target }}
 
-      - name: 🏗️ Build Rust Binary for macOS
-        run: cargo build --release --target x86_64-apple-darwin
+      - name: 🏗️ Build Rust Binary
+        run: cargo build --release --target ${{ matrix.target }}
 
       - name: 📦 Package Binary
         run: |
           mkdir -p release
-          cp target/x86_64-apple-darwin/release/$BINARY_NAME release/
-          tar -czvf $BINARY_NAME-macos.tar.gz -C release $BINARY_NAME
+          if [[ "${{ matrix.target }}" == *"linux"* ]]; then
+            cp target/${{ matrix.target }}/release/$BINARY_NAME release/
+            tar -czvf $BINARY_NAME-linux.tar.gz -C release $BINARY_NAME
+          elif [[ "${{ matrix.target }}" == *"darwin"* ]]; then
+            cp target/${{ matrix.target }}/release/$BINARY_NAME release/
+            tar -czvf $BINARY_NAME-macos.tar.gz -C release $BINARY_NAME
+          fi
 
       - name: 🚀 Create GitHub Release
         uses: softprops/action-gh-release@v2
