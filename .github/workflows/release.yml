@@ -3,32 +3,52 @@ name: Release Rust Binary
 on:
   push:
     tags:
-      - 'v*'  # Runs when a tag like v1.0.0 is pushed
+      - 'v*'  # Triggers on tags like 'v1.0.0'
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          - x86_64-unknown-linux-gnu       # Linux (GNU)
+          - aarch64-unknown-linux-gnu      # ARM Linux
+          - x86_64-apple-darwin            # macOS
+          - x86_64-pc-windows-msvc         # Windows
+
+    env:
+      BINARY_NAME: smart_file_analyzer  # Your project's binary name
 
     steps:
-      - name: 📥 Checkout code
+      - name: 📥 Checkout Code
         uses: actions/checkout@v4
 
       - name: 🦀 Install Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: 🛠 Build Rust Project
-        run: cargo build --release
+      - name: ⚙️ Install Required Target
+        run: rustup target add ${{ matrix.target }}
+
+      - name: 🏗️ Build Rust Binary
+        run: cargo build --release --target ${{ matrix.target }}
 
       - name: 📦 Package Binary
         run: |
           mkdir -p release
-          cp target/release/smart_file_analyzer release/
-          tar -czvf smart_file_analyzer.tar.gz -C release smart_file_analyzer
+          
+          if [[ "${{ matrix.target }}" == *"windows"* ]]; then
+            cp target/${{ matrix.target }}/release/$BINARY_NAME.exe release/
+            zip -r ${{ matrix.target }}.zip release
+          else
+            cp target/${{ matrix.target }}/release/$BINARY_NAME release/
+            tar -czvf ${{ matrix.target }}.tar.gz -C release $BINARY_NAME
+          fi
 
       - name: 🚀 Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            smart_file_analyzer.tar.gz
+            release/*.tar.gz
+            release/*.zip
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Use GitHub's default token
