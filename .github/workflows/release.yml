@@ -6,7 +6,7 @@ on:
       - 'v*'  # Triggers on tags like 'v1.0.0'
 
 permissions:
-  contents: write  # ✅ Fix: Allows creating a GitHub release
+  contents: write  # ✅ Grants permission for GitHub to create releases
 
 jobs:
   build:
@@ -14,10 +14,10 @@ jobs:
     strategy:
       matrix:
         target:
-          - x86_64-unknown-linux-gnu
-          - aarch64-unknown-linux-gnu
-          - x86_64-pc-windows-msvc
-          - x86_64-apple-darwin
+          - x86_64-unknown-linux-gnu       # Linux
+          - aarch64-unknown-linux-gnu      # ARM Linux (Requires Fix)
+          - x86_64-pc-windows-msvc         # Windows
+          - x86_64-apple-darwin            # macOS
 
     env:
       BINARY_NAME: smart_file_analyzer
@@ -29,8 +29,14 @@ jobs:
       - name: 🦀 Install Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: ⚙️ Install Required Target
-        run: rustup target add ${{ matrix.target }}
+      - name: ⚙️ Install Required Target & Cross-Compilation Tools
+        run: |
+          rustup target add ${{ matrix.target }}
+          
+          if [[ "${{ matrix.target }}" == "aarch64-unknown-linux-gnu" ]]; then
+            sudo apt-get update
+            sudo apt-get install -y gcc-aarch64-linux-gnu
+          fi
 
       - name: 🏗️ Build Rust Binary
         run: |
@@ -58,4 +64,4 @@ jobs:
             release/*.tar.gz
             release/*.zip
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Uses the default GitHub token with the correct permissions
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
