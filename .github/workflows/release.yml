@@ -5,16 +5,19 @@ on:
     tags:
       - 'v*'  # Triggers on tags like 'v1.0.0'
 
+permissions:
+  contents: write  # ✅ Fix: Allows creating a GitHub release
+
 jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         target:
-          - x86_64-unknown-linux-gnu       # Linux (GNU)
-          - aarch64-unknown-linux-gnu      # ARM Linux
-          - x86_64-pc-windows-msvc         # Windows
-          - x86_64-apple-darwin            # macOS
+          - x86_64-unknown-linux-gnu
+          - aarch64-unknown-linux-gnu
+          - x86_64-pc-windows-msvc
+          - x86_64-apple-darwin
 
     env:
       BINARY_NAME: smart_file_analyzer
@@ -40,7 +43,6 @@ jobs:
       - name: 📦 Package Binary
         run: |
           mkdir -p release
-          
           if [[ "${{ matrix.target }}" == *"windows"* ]]; then
             cp target/${{ matrix.target }}/release/$BINARY_NAME.exe release/
             zip -r ${{ matrix.target }}.zip release
@@ -56,4 +58,4 @@ jobs:
             release/*.tar.gz
             release/*.zip
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Uses the default GitHub token with the correct permissions
