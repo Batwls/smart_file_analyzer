@@ -13,11 +13,11 @@ jobs:
         target:
           - x86_64-unknown-linux-gnu       # Linux (GNU)
           - aarch64-unknown-linux-gnu      # ARM Linux
-          - x86_64-apple-darwin            # macOS
           - x86_64-pc-windows-msvc         # Windows
+          - x86_64-apple-darwin            # macOS
 
     env:
-      BINARY_NAME: smart_file_analyzer  # Your project's binary name
+      BINARY_NAME: smart_file_analyzer
 
     steps:
       - name: 📥 Checkout Code
@@ -30,7 +30,12 @@ jobs:
         run: rustup target add ${{ matrix.target }}
 
       - name: 🏗️ Build Rust Binary
-        run: cargo build --release --target ${{ matrix.target }}
+        run: |
+          if [[ "${{ matrix.target }}" == "x86_64-apple-darwin" ]]; then
+            sudo apt-get update
+            sudo apt-get install -y clang lld
+          fi
+          cargo build --release --target ${{ matrix.target }}
 
       - name: 📦 Package Binary
         run: |
@@ -51,4 +56,4 @@ jobs:
             release/*.tar.gz
             release/*.zip
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Use GitHub's default token
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
