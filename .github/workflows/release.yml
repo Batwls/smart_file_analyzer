@@ -6,7 +6,7 @@ on:
       - 'v*'  # Triggers on tags like 'v1.0.0'
 
 permissions:
-  contents: write  # ✅ Grants permission for GitHub to create releases
+  contents: write  # ✅ Allows creating GitHub releases
 
 jobs:
   build:
@@ -14,9 +14,9 @@ jobs:
     strategy:
       matrix:
         target:
-          - x86_64-unknown-linux-gnu       # Linux
-          - aarch64-unknown-linux-gnu      # ARM Linux (Requires Fix)
-          - x86_64-pc-windows-msvc         # Windows
+          - x86_64-unknown-linux-gnu       # Linux (Default)
+          - aarch64-unknown-linux-gnu      # ARM Linux (Fix Applied)
+          - x86_64-pc-windows-gnu          # ✅ Fix: Use GNU toolchain instead of MSVC
           - x86_64-apple-darwin            # macOS
 
     env:
@@ -32,10 +32,15 @@ jobs:
       - name: ⚙️ Install Required Target & Cross-Compilation Tools
         run: |
           rustup target add ${{ matrix.target }}
-          
+
           if [[ "${{ matrix.target }}" == "aarch64-unknown-linux-gnu" ]]; then
             sudo apt-get update
             sudo apt-get install -y gcc-aarch64-linux-gnu
+          fi
+
+          if [[ "${{ matrix.target }}" == "x86_64-pc-windows-gnu" ]]; then
+            sudo apt-get update
+            sudo apt-get install -y mingw-w64
           fi
 
       - name: 🏗️ Build Rust Binary
